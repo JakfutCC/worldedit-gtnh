@@ -185,10 +185,13 @@ public class UtilityCommands {
         int size = args.argsLength() > 0 ? Math.max(1, args.getInteger(0)) : 1;
         we.checkMaxRadius(size);
         World world = player.getWorld();
-        int height = args.argsLength() > 1 ? Math.min((world.getMaxY() + 1), args.getInteger(1) + 2)
-            : (world.getMaxY() + 1);
+        Vector position = session.getPlacementPosition(player);
+        int availableHeight = (int) Math.min(Integer.MAX_VALUE, (long) world.getMaxY() - position.getBlockY() + 1);
+        int defaultHeight = (int) Math
+            .min(Integer.MAX_VALUE, Math.max(1L, (long) world.getMaxGenerationY() - position.getBlockY() + 1));
+        int height = args.argsLength() > 1 ? Math.min(availableHeight, args.getInteger(1) + 2) : defaultHeight;
 
-        int affected = editSession.removeAbove(session.getPlacementPosition(player), size, height);
+        int affected = editSession.removeAbove(position, size, height);
         player.print(affected + " block(s) have been removed.");
     }
 
@@ -206,10 +209,13 @@ public class UtilityCommands {
         int size = args.argsLength() > 0 ? Math.max(1, args.getInteger(0)) : 1;
         we.checkMaxRadius(size);
         World world = player.getWorld();
-        int height = args.argsLength() > 1 ? Math.min((world.getMaxY() + 1), args.getInteger(1) + 2)
-            : (world.getMaxY() + 1);
+        Vector position = session.getPlacementPosition(player);
+        int availableHeight = (int) Math.min(Integer.MAX_VALUE, (long) position.getBlockY() - world.getMinY() + 1);
+        int defaultHeight = (int) Math
+            .min(Integer.MAX_VALUE, Math.max(1L, (long) position.getBlockY() - world.getMinGenerationY() + 1));
+        int height = args.argsLength() > 1 ? Math.min(availableHeight, args.getInteger(1) + 2) : defaultHeight;
 
-        int affected = editSession.removeBelow(session.getPlacementPosition(player), size, height);
+        int affected = editSession.removeBelow(position, size, height);
         player.print(affected + " block(s) have been removed.");
     }
 

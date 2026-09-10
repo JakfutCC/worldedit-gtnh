@@ -465,8 +465,8 @@ public class RegionCommands {
             Vector pos = player.getPosition();
             int cx = pos.getBlockX() >> 4;
             int cz = pos.getBlockZ() >> 4;
-            Vector min = new Vector((cx - 8) * 16, 0, (cz - 8) * 16);
-            Vector max = new Vector((cx + 8) * 16 + 15, world.getMaxY(), (cz + 8) * 16 + 15);
+            Vector min = new Vector((cx - 8) * 16, world.getMinGenerationY(), (cz - 8) * 16);
+            Vector max = new Vector((cx + 8) * 16 + 15, world.getMaxGenerationY(), (cz + 8) * 16 + 15);
             region = new CuboidRegion(world, min, max);
         }
 
@@ -528,8 +528,8 @@ public class RegionCommands {
             Vector pos = player.getPosition();
             int cx = pos.getBlockX() >> 4;
             int cz = pos.getBlockZ() >> 4;
-            Vector min = new Vector((cx - 8) * 16, 0, (cz - 8) * 16);
-            Vector max = new Vector((cx + 8) * 16 + 15, world.getMaxY(), (cz + 8) * 16 + 15);
+            Vector min = new Vector((cx - 8) * 16, world.getMinGenerationY(), (cz - 8) * 16);
+            Vector max = new Vector((cx + 8) * 16 + 15, world.getMaxGenerationY(), (cz + 8) * 16 + 15);
             region = new CuboidRegion(world, min, max);
         }
 

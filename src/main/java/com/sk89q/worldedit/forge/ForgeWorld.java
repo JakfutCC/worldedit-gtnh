@@ -59,6 +59,7 @@ import net.minecraft.world.gen.feature.WorldGenTaiga2;
 import net.minecraft.world.gen.feature.WorldGenTrees;
 import net.minecraft.world.gen.feature.WorldGenerator;
 
+import com.cardinalstar.cubicchunks.world.ICubicWorld;
 import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.worldedit.BlockVector2D;
 import com.sk89q.worldedit.EditSession;
@@ -81,6 +82,8 @@ import com.sk89q.worldedit.world.AbstractWorld;
 import com.sk89q.worldedit.world.biome.BaseBiome;
 import com.sk89q.worldedit.world.registry.WorldData;
 
+import cpw.mods.fml.common.Loader;
+
 /**
  * An adapter to Minecraft worlds for WorldEdit.
  */
@@ -88,6 +91,7 @@ public class ForgeWorld extends AbstractWorld {
 
     private static final Logger logger = Logger.getLogger(ForgeWorld.class.getCanonicalName());
     private static final Random random = new Random();
+    private static final boolean CUBIC_CHUNKS_LOADED = Loader.isModLoaded("cubicchunks");
     private final WeakReference<World> worldRef;
 
     /**
@@ -129,6 +133,36 @@ public class ForgeWorld extends AbstractWorld {
         } else {
             throw new RuntimeException("The reference to the world was lost (i.e. the world may have been unloaded)");
         }
+    }
+
+    @Override
+    public int getMinY() {
+        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMinY(getWorld()) : 0;
+    }
+
+    @Override
+    public int getMinGenerationY() {
+        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMinGenerationY(getWorld()) : 0;
+    }
+
+    @Override
+    public int getMaxY() {
+        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMaxY(getWorld()) : getWorld().getActualHeight() - 1;
+    }
+
+    @Override
+    public int getMaxGenerationY() {
+        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMaxGenerationY(getWorld()) : getWorld().getActualHeight() - 1;
+    }
+
+    @Override
+    public Vector getMinimumPoint() {
+        return new Vector(-30000000, getMinY(), -30000000);
+    }
+
+    @Override
+    public Vector getMaximumPoint() {
+        return new Vector(30000000, getMaxY(), 30000000);
     }
 
     @Override
@@ -292,16 +326,18 @@ public class ForgeWorld extends AbstractWorld {
 
     @Override
     public boolean regenerate(Region region, EditSession editSession) {
-        BaseBlock[] history = new BaseBlock[256 * (getMaxY() + 1)];
+        int minY = getMinGenerationY();
+        int maxY = getMaxGenerationY();
+        BaseBlock[] history = new BaseBlock[Math.multiplyExact(256, maxY - minY + 1)];
 
         for (Vector2D chunk : region.getChunks()) {
-            Vector min = new Vector(chunk.getBlockX() * 16, 0, chunk.getBlockZ() * 16);
+            Vector min = new Vector(chunk.getBlockX() * 16, minY, chunk.getBlockZ() * 16);
 
             for (int x = 0; x < 16; x++) {
-                for (int y = 0; y < getMaxY() + 1; y++) {
+                for (int y = minY; y <= maxY; y++) {
                     for (int z = 0; z < 16; z++) {
-                        Vector pt = min.add(x, y, z);
-                        int index = y * 16 * 16 + z * 16 + x;
+                        Vector pt = min.add(x, y - minY, z);
+                        int index = (y - minY) * 16 * 16 + z * 16 + x;
                         history[index] = editSession.getBlock(pt);
                     }
                 }
@@ -370,10 +406,10 @@ public class ForgeWorld extends AbstractWorld {
             }
 
             for (int x = 0; x < 16; x++) {
-                for (int y = 0; y < getMaxY() + 1; y++) {
+                for (int y = minY; y <= maxY; y++) {
                     for (int z = 0; z < 16; z++) {
-                        Vector pt = min.add(x, y, z);
-                        int index = y * 16 * 16 + z * 16 + x;
+                        Vector pt = min.add(x, y - minY, z);
+                        int index = (y - minY) * 16 * 16 + z * 16 + x;
 
                         if (!region.contains(pt)) editSession.smartSetBlock(pt, history[index]);
                         else {
@@ -497,7 +533,8 @@ public class ForgeWorld extends AbstractWorld {
     public void fixLighting(Iterable<BlockVector2D> chunks) {
         World world = getWorld();
         boolean hasSky = !world.provider.hasNoSky;
-        int maxY = world.getActualHeight();
+        int minY = getMinGenerationY();
+        int maxY = getMaxGenerationY() + 1;
         for (BlockVector2D chunk : chunks) {
             int cx = chunk.getBlockX();
             int cz = chunk.getBlockZ();
@@ -509,8 +546,8 @@ public class ForgeWorld extends AbstractWorld {
             int bx = cx << 4;
             int bz = cz << 4;
             int topY = mcChunk.getTopFilledSegment();
-            if (topY < 0) {
-                topY = 0;
+            if (topY < minY) {
+                topY = minY;
             } else {
                 topY += 16;
                 if (topY > maxY) {
@@ -519,7 +556,7 @@ public class ForgeWorld extends AbstractWorld {
             }
             for (int x = 0; x < 16; x++) {
                 for (int z = 0; z < 16; z++) {
-                    for (int y = 0; y < topY; y++) {
+                    for (int y = minY; y < topY; y++) {
                         int wx = bx + x;
                         int wy = y;
                         int wz = bz + z;
@@ -530,7 +567,7 @@ public class ForgeWorld extends AbstractWorld {
                     }
                 }
             }
-            world.markBlockRangeForRenderUpdate(bx, 0, bz, bx + 15, topY - 1, bz + 15);
+            world.markBlockRangeForRenderUpdate(bx, minY, bz, bx + 15, topY - 1, bz + 15);
             mcChunk.setChunkModified();
         }
     }
@@ -590,6 +627,25 @@ public class ForgeWorld extends AbstractWorld {
     /**
      * Thrown when the reference to the world is lost.
      */
+    private static final class CubicChunksCompat {
+
+        private static int getMinY(World world) {
+            return ((ICubicWorld) world).getMinHeight();
+        }
+
+        private static int getMaxY(World world) {
+            return ((ICubicWorld) world).getMaxHeight() - 1;
+        }
+
+        private static int getMinGenerationY(World world) {
+            return ((ICubicWorld) world).getMinGenerationHeight();
+        }
+
+        private static int getMaxGenerationY(World world) {
+            return ((ICubicWorld) world).getMaxGenerationHeight() - 1;
+        }
+    }
+
     private static class WorldReferenceLostException extends WorldEditException {
 
         private WorldReferenceLostException(String message) {

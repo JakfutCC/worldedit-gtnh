@@ -809,7 +809,7 @@ public class EditSession implements Extent {
         MaskIntersection mask = new MaskIntersection(
             new RegionMask(new EllipsoidRegion(null, origin, new Vector(radius, radius, radius))),
             new BoundedHeightMask(
-                Math.max(origin.getBlockY() - depth + 1, 0),
+                Math.max(origin.getBlockY() - depth + 1, getWorld().getMinY()),
                 Math.min(getWorld().getMaxY(), origin.getBlockY())),
             Masks.negate(new ExistingBlockMask(this)));
 
@@ -1302,7 +1302,7 @@ public class EditSession implements Extent {
         checkArgument(radius >= 0, "radius >= 0 required");
 
         MaskIntersection mask = new MaskIntersection(
-            new BoundedHeightMask(0, getWorld().getMaxY()),
+            new BoundedHeightMask(getWorld().getMinY(), getWorld().getMaxY()),
             new RegionMask(new EllipsoidRegion(null, origin, new Vector(radius, radius, radius))),
             getWorld().createLiquidMask());
 
@@ -1343,7 +1343,7 @@ public class EditSession implements Extent {
 
         // There are boundaries that the routine needs to stay in
         MaskIntersection mask = new MaskIntersection(
-            new BoundedHeightMask(0, Math.min(origin.getBlockY(), getWorld().getMaxY())),
+            new BoundedHeightMask(getWorld().getMinY(), Math.min(origin.getBlockY(), getWorld().getMaxY())),
             new RegionMask(new EllipsoidRegion(null, origin, new Vector(radius, radius, radius))),
             blockMask);
 
@@ -1404,8 +1404,8 @@ public class EditSession implements Extent {
             pos = pos.subtract(0, height, 0);
         }
 
-        if (pos.getBlockY() < 0) {
-            pos = pos.setY(0);
+        if (pos.getBlockY() < world.getMinY()) {
+            pos = pos.setY(world.getMinY());
         } else if (pos.getBlockY() + height - 1 > world.getMaxY()) {
             height = world.getMaxY() - pos.getBlockY() + 1;
         }
@@ -1631,7 +1631,7 @@ public class EditSession implements Extent {
                     continue;
                 }
 
-                for (int y = world.getMaxY(); y >= 1; --y) {
+                for (int y = world.getMaxGenerationY(); y >= world.getMinGenerationY(); --y) {
                     Vector pt = new Vector(x, y, z);
                     int id = getBlockType(pt);
 
@@ -1689,7 +1689,7 @@ public class EditSession implements Extent {
                     continue;
                 }
 
-                for (int y = world.getMaxY(); y >= 1; --y) {
+                for (int y = world.getMaxGenerationY(); y >= world.getMinGenerationY(); --y) {
                     Vector pt = new Vector(x, y, z);
                     int id = getBlockType(pt);
 
@@ -1711,7 +1711,7 @@ public class EditSession implements Extent {
                     }
 
                     // Too high?
-                    if (y == world.getMaxY()) {
+                    if (y == world.getMaxGenerationY()) {
                         break;
                     }
 
@@ -1767,7 +1767,7 @@ public class EditSession implements Extent {
                     continue;
                 }
 
-                loop: for (int y = world.getMaxY(); y >= 1; --y) {
+                loop: for (int y = world.getMaxGenerationY(); y >= world.getMinGenerationY(); --y) {
                     final Vector pt = new Vector(x, y, z);
                     final int id = getBlockType(pt);
                     final int data = getBlockData(pt);

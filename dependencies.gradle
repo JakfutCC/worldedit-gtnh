@@ -34,6 +34,7 @@
  * For more details, see https://docs.gradle.org/8.0.1/userguide/java_library_plugin.html#sec:java_library_configurations_graph
  */
 dependencies {
+    compileOnly("com.cardinalstar.cubicchunks:CubicChunks1710:v0.1.21-alpha-pre:dev") { transitive = false }
     implementation 'de.schlichtherle:truezip:6.8.3'
     implementation 'rhino:js:1.7R2'
     implementation 'org.yaml:snakeyaml:1.9'

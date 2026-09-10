@@ -203,8 +203,8 @@ public class SelectionCommands {
             final Vector2D min2D = ChunkStore.toChunk(region.getMinimumPoint());
             final Vector2D max2D = ChunkStore.toChunk(region.getMaximumPoint());
 
-            min = new Vector(min2D.getBlockX() * 16, 0, min2D.getBlockZ() * 16);
-            max = new Vector(max2D.getBlockX() * 16 + 15, world.getMaxY(), max2D.getBlockZ() * 16 + 15);
+            min = new Vector(min2D.getBlockX() * 16, world.getMinGenerationY(), min2D.getBlockZ() * 16);
+            max = new Vector(max2D.getBlockX() * 16 + 15, world.getMaxGenerationY(), max2D.getBlockZ() * 16 + 15);
 
             player.print(
                 "Chunks selected: (" + min2D.getBlockX()
@@ -233,8 +233,8 @@ public class SelectionCommands {
                 min2D = ChunkStore.toChunk(player.getBlockIn());
             }
 
-            min = new Vector(min2D.getBlockX() * 16, 0, min2D.getBlockZ() * 16);
-            max = min.add(15, world.getMaxY(), 15);
+            min = new Vector(min2D.getBlockX() * 16, world.getMinGenerationY(), min2D.getBlockZ() * 16);
+            max = new Vector(min2D.getBlockX() * 16 + 15, world.getMaxGenerationY(), min2D.getBlockZ() * 16 + 15);
 
             player.print("Chunk selected: " + min2D.getBlockX() + ", " + min2D.getBlockZ());
         }
@@ -301,16 +301,17 @@ public class SelectionCommands {
             Region region = session.getSelection(player.getWorld());
             try {
                 int oldSize = region.getArea();
+                World world = player.getWorld();
                 region.expand(
                     new Vector(
                         0,
-                        (player.getWorld()
-                            .getMaxY() + 1),
+                        world.getMaxGenerationY() - region.getMaximumPoint()
+                            .getBlockY(),
                         0),
                     new Vector(
                         0,
-                        -(player.getWorld()
-                            .getMaxY() + 1),
+                        world.getMinGenerationY() - region.getMinimumPoint()
+                            .getBlockY(),
                         0));
                 session.getRegionSelector(player.getWorld())
                     .learnChanges();

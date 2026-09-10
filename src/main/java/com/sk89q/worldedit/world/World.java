@@ -46,11 +46,38 @@ public interface World extends Extent {
     String getName();
 
     /**
+     * Get the minimum Y.
+     *
+     * @return the minimum Y
+     */
+    default int getMinY() {
+        return getMinimumPoint().getBlockY();
+    }
+
+    /**
+     * Get the minimum Y used by implicit whole-world operations.
+     *
+     * @return the minimum generation Y
+     */
+    default int getMinGenerationY() {
+        return getMinY();
+    }
+
+    /**
      * Get the maximum Y.
      *
      * @return the maximum Y
      */
     int getMaxY();
+
+    /**
+     * Get the maximum Y used by implicit whole-world operations.
+     *
+     * @return the maximum generation Y
+     */
+    default int getMaxGenerationY() {
+        return getMaxY();
+    }
 
     /**
      * Checks whether the given block ID is a valid block ID.

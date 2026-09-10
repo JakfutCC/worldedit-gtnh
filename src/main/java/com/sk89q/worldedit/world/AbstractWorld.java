@@ -81,6 +81,11 @@ public abstract class AbstractWorld implements World {
     }
 
     @Override
+    public int getMinY() {
+        return getMinimumPoint().getBlockY();
+    }
+
+    @Override
     public int getMaxY() {
         return getMaximumPoint().getBlockY();
     }
