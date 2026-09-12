@@ -65,6 +65,7 @@ public class NavigationCommands {
     @Command(aliases = { "ascend", "asc" }, usage = "[# of levels]", desc = "Go up a floor", min = 0, max = 1)
     @CommandPermissions("worldedit.navigation.ascend")
     public void ascend(Player player, @Optional("1") int levelsToAscend) throws WorldEditException {
+        if (CubicChunksCommandGuard.reject(player, "/ascend")) return;
         int ascentLevels = 1;
         while (player.ascendLevel() && levelsToAscend != ascentLevels) {
             ++ascentLevels;
@@ -98,6 +99,8 @@ public class NavigationCommands {
     @Logging(POSITION)
     public void ceiling(Player player, LocalSession session, EditSession editSession, CommandContext args)
         throws WorldEditException {
+
+        if (CubicChunksCommandGuard.reject(player, "/ceil")) return;
 
         final int clearance = args.argsLength() > 0 ? Math.max(0, args.getInteger(0)) : 0;
 

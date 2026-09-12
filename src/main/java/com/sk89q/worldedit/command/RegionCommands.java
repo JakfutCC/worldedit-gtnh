@@ -328,6 +328,7 @@ public class RegionCommands {
     @Logging(REGION)
     public void regenerateChunk(Player player, LocalSession session, EditSession editSession, @Selection Region region)
         throws WorldEditException {
+        if (CubicChunksCommandGuard.reject(player, "//regen")) return;
         Mask mask = session.getMask();
         try {
             session.setMask((Mask) null);

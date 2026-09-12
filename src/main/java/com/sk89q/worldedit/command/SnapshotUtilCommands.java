@@ -61,6 +61,8 @@ public class SnapshotUtilCommands {
     public void restore(Player player, LocalSession session, EditSession editSession, CommandContext args)
         throws WorldEditException {
 
+        if (CubicChunksCommandGuard.reject(player, "//restore")) return;
+
         LocalConfiguration config = we.getConfiguration();
 
         if (config.snapshotRepo == null) {

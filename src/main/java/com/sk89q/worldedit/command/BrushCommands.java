@@ -206,6 +206,7 @@ public class BrushCommands {
     @CommandPermissions("worldedit.brush.gravity")
     public void gravityBrush(Player player, LocalSession session, EditSession editSession, @Optional("5") double radius,
         @Switch('h') boolean fromMaxY) throws WorldEditException {
+        if (CubicChunksCommandGuard.reject(player, "/brush gravity")) return;
         worldEdit.checkMaxBrushRadius(radius);
 
         BrushTool tool = session.getBrushTool(player.getItemInHand());
