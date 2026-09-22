@@ -98,7 +98,7 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
 
         byte free = 0;
 
-        while (y <= world.getMaxY() + 2) {
+        while (y <= world.getMaxY() + 2 && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
             if (BlockType.canPassThrough(world.getBlock(new Vector(x, y, z)))) {
                 ++free;
             } else {
@@ -108,9 +108,12 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
             if (free == 2) {
                 if (y - 1 != origY) {
                     final Vector pos = new Vector(x, y - 2, z);
+                    if (!world.isNavigationPositionAvailable(pos)) return;
                     final int id = world.getBlockType(pos);
                     final int data = world.getBlockData(pos);
-                    setPosition(new Vector(x + 0.5, y - 2 + BlockType.centralTopLimit(id, data), z + 0.5));
+                    setNavigationPosition(
+                        world,
+                        new Vector(x + 0.5, y - 2 + BlockType.centralTopLimit(id, data), z + 0.5));
                 }
 
                 return;
@@ -127,12 +130,12 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
         int y = Math.max(world.getMinY(), searchPos.getBlockY());
         int z = searchPos.getBlockZ();
 
-        while (y >= world.getMinY()) {
+        while (y >= world.getMinY() && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
             final Vector pos = new Vector(x, y, z);
             final int id = world.getBlockType(pos);
             final int data = world.getBlockData(pos);
             if (!BlockType.canPassThrough(id, data)) {
-                setPosition(new Vector(x + 0.5, y + BlockType.centralTopLimit(id, data), z + 0.5));
+                setNavigationPosition(world, new Vector(x + 0.5, y + BlockType.centralTopLimit(id, data), z + 0.5));
                 return;
             }
 
@@ -159,7 +162,7 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
         byte free = 0;
         byte spots = 0;
 
-        while (y <= world.getMaxY() + 2) {
+        while (y <= world.getMaxY() + 2 && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
             if (BlockType.canPassThrough(world.getBlock(new Vector(x, y, z)))) {
                 ++free;
             } else {
@@ -178,8 +181,7 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
                         return false;
                     }
 
-                    setPosition(platform.add(0.5, BlockType.centralTopLimit(block), 0.5));
-                    return true;
+                    return setNavigationPosition(world, platform.add(0.5, BlockType.centralTopLimit(block), 0.5));
                 }
             }
 
@@ -202,7 +204,7 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
 
         byte free = 0;
 
-        while (y > world.getMinY()) {
+        while (y > world.getMinY() && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
             if (BlockType.canPassThrough(world.getBlock(new Vector(x, y, z)))) {
                 ++free;
             } else {
@@ -213,7 +215,7 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
                 // So we've found a spot, but we have to drop the player
                 // lightly and also check to see if there's something to
                 // stand upon
-                while (y >= world.getMinY()) {
+                while (y >= world.getMinY() && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
                     final Vector platform = new Vector(x, y, z);
                     final BaseBlock block = world.getBlock(platform);
                     final int type = block.getId();
@@ -221,8 +223,7 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
                     // Don't want to end up in lava
                     if (type != BlockID.AIR && type != BlockID.LAVA && type != BlockID.STATIONARY_LAVA) {
                         // Found a block!
-                        setPosition(platform.add(0.5, BlockType.centralTopLimit(block), 0.5));
-                        return true;
+                        return setNavigationPosition(world, platform.add(0.5, BlockType.centralTopLimit(block), 0.5));
                     }
 
                     --y;
@@ -252,14 +253,15 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
         int z = pos.getBlockZ();
 
         // No free space above
-        if (world.getBlockType(new Vector(x, y, z)) != 0) {
+        if (!world.isNavigationPositionAvailable(new Vector(x, y, z)) || world.getBlockType(new Vector(x, y, z)) != 0) {
             return false;
         }
 
-        while (y <= world.getMaxY()) {
+        while (y <= world.getMaxY() && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
             // Found a ceiling!
             if (!BlockType.canPassThrough(world.getBlock(new Vector(x, y, z)))) {
                 int platformY = Math.max(initialY, y - 3 - clearance);
+                if (!canFloatAt(world, x, platformY + 1, z)) return false;
                 floatAt(x, platformY + 1, z, alwaysGlass);
                 return true;
             }
@@ -285,12 +287,13 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
         final int z = pos.getBlockZ();
         final int maxY = Math.min(getWorld().getMaxY() + 1, initialY + distance);
 
-        while (y <= world.getMaxY() + 2) {
+        while (y <= world.getMaxY() + 2 && world.isNavigationPositionAvailable(new Vector(x, y, z))) {
             if (!BlockType.canPassThrough(world.getBlock(new Vector(x, y, z)))) {
                 break; // Hit something
             } else if (y > maxY + 1) {
                 break;
             } else if (y == maxY + 1) {
+                if (!canFloatAt(world, x, y - 1, z)) return false;
                 floatAt(x, y - 1, z, alwaysGlass);
                 return true;
             }
@@ -303,9 +306,28 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
 
     @Override
     public void floatAt(int x, int y, int z, boolean alwaysGlass) {
-        getPosition().getWorld()
-            .setBlockType(new Vector(x, y - 1, z), BlockID.GLASS);
+        World world = getPosition().getWorld();
+        if (!canFloatAt(world, x, y, z)) return;
+        world.setBlockType(new Vector(x, y - 1, z), BlockID.GLASS);
         setPosition(new Vector(x + 0.5, y, z + 0.5));
+    }
+
+    private boolean setNavigationPosition(World world, Vector position) {
+        if (!isNavigationDestinationAvailable(world, position)) return false;
+        setPosition(position);
+        return true;
+    }
+
+    private static boolean canFloatAt(World world, int x, int y, int z) {
+        return world.isNavigationPositionAvailable(new Vector(x, y - 1, z))
+            && isNavigationDestinationAvailable(world, new Vector(x + 0.5, y, z + 0.5));
+    }
+
+    private static boolean isNavigationDestinationAvailable(World world, Vector position) {
+        // Tall supports (fences/walls) can put the player's head in the next cube.
+        return world.isNavigationPositionAvailable(position.floor()) && world.isNavigationPositionAvailable(
+            position.add(0, 1.8, 0)
+                .floor());
     }
 
     @Override

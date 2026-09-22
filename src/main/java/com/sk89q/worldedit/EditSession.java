@@ -1631,7 +1631,7 @@ public class EditSession implements Extent {
                     continue;
                 }
 
-                for (int y = world.getMaxGenerationY(); y >= world.getMinGenerationY(); --y) {
+                for (int y = world.getMaxGenerationY(); y > world.getMinGenerationY(); --y) {
                     Vector pt = new Vector(x, y, z);
                     int id = getBlockType(pt);
 
@@ -1689,7 +1689,7 @@ public class EditSession implements Extent {
                     continue;
                 }
 
-                for (int y = world.getMaxGenerationY(); y >= world.getMinGenerationY(); --y) {
+                for (int y = world.getMaxGenerationY(); y > world.getMinGenerationY(); --y) {
                     Vector pt = new Vector(x, y, z);
                     int id = getBlockType(pt);
 
@@ -1767,7 +1767,7 @@ public class EditSession implements Extent {
                     continue;
                 }
 
-                loop: for (int y = world.getMaxGenerationY(); y >= world.getMinGenerationY(); --y) {
+                loop: for (int y = world.getMaxGenerationY(); y > world.getMinGenerationY(); --y) {
                     final Vector pt = new Vector(x, y, z);
                     final int id = getBlockType(pt);
                     final int data = getBlockData(pt);

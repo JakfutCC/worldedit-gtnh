@@ -303,6 +303,17 @@ public interface World extends Extent {
     void checkLoadedChunk(Vector position);
 
     /**
+     * Whether navigation may inspect this position without extending its search
+     * into unavailable terrain. Platforms with finite worlds retain legacy behavior.
+     *
+     * @param position the position to inspect
+     * @return true if the navigation search may continue
+     */
+    default boolean isNavigationPositionAvailable(Vector position) {
+        return true;
+    }
+
+    /**
      * Fix the given chunks after fast mode was used.
      *
      * <p>

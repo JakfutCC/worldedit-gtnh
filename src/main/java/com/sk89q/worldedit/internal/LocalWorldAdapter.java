@@ -214,6 +214,11 @@ public class LocalWorldAdapter extends LocalWorld {
     }
 
     @Override
+    public boolean isNavigationPositionAvailable(Vector position) {
+        return world.isNavigationPositionAvailable(position);
+    }
+
+    @Override
     public void fixAfterFastMode(Iterable<BlockVector2D> chunks) {
         world.fixAfterFastMode(chunks);
     }

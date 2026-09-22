@@ -147,12 +147,22 @@ public class ForgeWorld extends AbstractWorld {
 
     @Override
     public int getMaxY() {
-        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMaxY(getWorld()) : getWorld().getActualHeight() - 1;
+        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMaxY(getWorld()) : 255;
     }
 
     @Override
     public int getMaxGenerationY() {
-        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMaxGenerationY(getWorld()) : getWorld().getActualHeight() - 1;
+        return CUBIC_CHUNKS_LOADED ? CubicChunksCompat.getMaxGenerationY(getWorld()) : 255;
+    }
+
+    @Override
+    public boolean isNavigationPositionAvailable(Vector position) {
+        if (!CUBIC_CHUNKS_LOADED) return true;
+        int x = position.getBlockX();
+        int y = position.getBlockY();
+        int z = position.getBlockZ();
+        // CC's exact-position check tests the loaded cube, not merely its column or disk entry.
+        return y >= getMinY() && y <= getMaxY() && getWorld().checkChunksExist(x, y, z, x, y, z);
     }
 
     @Override
@@ -534,7 +544,7 @@ public class ForgeWorld extends AbstractWorld {
         World world = getWorld();
         boolean hasSky = !world.provider.hasNoSky;
         int minY = getMinGenerationY();
-        int maxY = getMaxGenerationY() + 1;
+        int maxY = CUBIC_CHUNKS_LOADED ? getMaxGenerationY() + 1 : world.getActualHeight();
         for (BlockVector2D chunk : chunks) {
             int cx = chunk.getBlockX();
             int cz = chunk.getBlockZ();
